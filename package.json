@@ -2,6 +2,7 @@
   "name": "zanolib",
   "version": "1.0.0",
   "main": "zanoLib.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

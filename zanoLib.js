@@ -3,7 +3,7 @@ import Big from "big.js";
 
 // Configuration
 const walletUrl = "http://127.0.0.1:10500/json_rpc";
-const daemonUrl = "http://127.0.0.1:11211/json_rpc";
+const daemonUrl = "http://127.0.0.1:12111/json_rpc";
 
 // Fetch the list of all assets registered in the Zano blockchain
 const getAssetsList = async () => {
@@ -44,6 +44,29 @@ const getAssetDetails = async (assetId) => {
   const asset = assets.find((a) => a.asset_id === assetId);
   if (!asset) throw new Error(`Asset with ID ${assetId} not found`);
   return asset;
+};
+
+// Fetch asset descriptor by asset ID
+const getAssetInfo = async (assetId) => {
+  const headers = { "Content-Type": "application/json" };
+  const data = {
+    jsonrpc: "2.0",
+    id: 0,
+    method: "get_asset_info",
+    params: { asset_id: assetId },
+  };
+
+  try {
+    const response = await axios.post(daemonUrl, data, { headers });
+    if (response.data.result) {
+      return response.data.result;
+    } else {
+      throw new Error(`Error fetching info for asset ID ${assetId}`);
+    }
+  } catch (error) {
+    console.error(error);
+    throw error;
+  }
 };
 
 // Send a transfer of a specific asset
@@ -92,13 +115,22 @@ const getBalances = async () => {
     const balances = response.data.result.balances.map((asset) => ({
       name: asset.asset_info.full_name,
       ticker: asset.asset_info.ticker,
+      id: asset.asset_info.asset_id,
       amount: new Big(asset.unlocked)
         .div(new Big(10).pow(asset.asset_info.decimal_point))
         .toString(),
     }));
     return balances.sort((a, b) => {
-      if (a.ticker === "ZANO") return -1;
-      if (b.ticker === "ZANO") return 1;
+      if (
+        a.id ===
+        "d6329b5b1f7c0805b5c345f4957554002a2f557845f64d7645dae0e051a6498a"
+      )
+        return -1;
+      if (
+        b.id ===
+        "d6329b5b1f7c0805b5c345f4957554002a2f557845f64d7645dae0e051a6498a"
+      )
+        return 1;
       return 0;
     });
   } catch (error) {
@@ -107,4 +139,10 @@ const getBalances = async () => {
   }
 };
 
-export { sendTransfer, getBalances, getAssetsList, getAssetDetails };
+export {
+  sendTransfer,
+  getBalances,
+  getAssetsList,
+  getAssetDetails,
+  getAssetInfo,
+};
