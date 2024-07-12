@@ -1,6 +1,15 @@
 import axios from "axios";
 import Big from "big.js";
 
+// Define custom error class
+class ZanoError extends Error {
+  constructor(message, code) {
+    super(message);
+    this.name = "ZanoError";
+    this.code = code;
+  }
+}
+
 // Configuration
 const walletUrl = "http://127.0.0.1:10500/json_rpc";
 const daemonUrl = "http://127.0.0.1:12111/json_rpc";
@@ -30,8 +39,7 @@ const getAssetsList = async () => {
       allAssets = allAssets.concat(assets);
       offset += count;
     } catch (error) {
-      console.error("Error fetching assets list:", error);
-      throw error;
+      throw new ZanoError("Failed to fetch assets list", "ASSETS_FETCH_ERROR");
     }
   }
 
@@ -42,7 +50,11 @@ const getAssetsList = async () => {
 const getAssetDetails = async (assetId) => {
   const assets = await getAssetsList();
   const asset = assets.find((a) => a.asset_id === assetId);
-  if (!asset) throw new Error(`Asset with ID ${assetId} not found`);
+  if (!asset)
+    throw new ZanoError(
+      `Asset with ID ${assetId} not found`,
+      "ASSET_NOT_FOUND"
+    );
   return asset;
 };
 
@@ -61,11 +73,14 @@ const getAssetInfo = async (assetId) => {
     if (response.data.result) {
       return response.data.result;
     } else {
-      throw new Error(`Error fetching info for asset ID ${assetId}`);
+      throw new ZanoError(
+        `Error fetching info for asset ID ${assetId}`,
+        "ASSET_INFO_ERROR"
+      );
     }
   } catch (error) {
     console.error(error);
-    throw error;
+    throw new ZanoError("Failed to fetch asset info", "ASSET_INFO_FETCH_ERROR");
   }
 };
 
@@ -100,12 +115,20 @@ const sendTransfer = async (assetId, address, amount) => {
     const response = await axios.post(walletUrl, data, { headers });
     if (response.data.result) {
       return response.data.result;
+    } else if (
+      response.data.error &&
+      response.data.error.message === "WALLET_RPC_ERROR_CODE_NOT_ENOUGH_MONEY"
+    ) {
+      throw new ZanoError("Not enough funds", "NOT_ENOUGH_FUNDS");
     } else {
-      throw new Error("Error sending transfer");
+      throw new ZanoError("Error sending transfer", "TRANSFER_ERROR");
     }
   } catch (error) {
-    console.error(error);
-    throw error;
+    if (error instanceof ZanoError) {
+      throw error; // Re-throw the custom error
+    } else {
+      throw new ZanoError("Failed to send transfer", "TRANSFER_SEND_ERROR");
+    }
   }
 };
 
@@ -142,12 +165,12 @@ const getBalances = async () => {
       return 0;
     });
   } catch (error) {
-    console.error(error);
-    throw error;
+    throw new ZanoError("Failed to fetch balances", "BALANCES_FETCH_ERROR");
   }
 };
 
 export {
+  ZanoError,
   sendTransfer,
   getBalances,
   getAssetsList,
