@@ -18,10 +18,12 @@ To use the library, import the functions you need:
 
 ```javascript
 import {
+  ZanoError,
   sendTransfer,
   getBalances,
   getAssetsList,
   getAssetDetails,
+  getAssetInfo,
 } from "./zanoLib.js";
 ```
 
@@ -44,7 +46,11 @@ const exampleUsage = async () => {
     const transferResult = await sendTransfer(assetId, address, amount);
     console.log("Transfer Result:", transferResult);
   } catch (error) {
-    console.error("Error:", error);
+    if (error instanceof ZanoError) {
+      console.error(`Custom Error: ${error.message} (Code: ${error.code})`);
+    } else {
+      console.error("General Error:", error);
+    }
   }
 };
 
@@ -111,6 +117,23 @@ Fetches the balances of all assets in the wallet.
 ```javascript
 const balances = await getBalances();
 console.log("Balances:", balances);
+```
+
+### `getAssetInfo(assetId)`
+
+Fetches information of a specific asset by asset ID.
+
+#### Parameters
+
+- `assetId` (string): The ID of the asset to fetch information for.
+
+#### Usage
+
+```javascript
+const assetInfo = await getAssetInfo(
+  "d6329b5b1f7c0805b5c345f4957554002a2f557845f64d7645dae0e051a6498a"
+);
+console.log("Asset Info:", assetInfo);
 ```
 
 ## Error Handling
