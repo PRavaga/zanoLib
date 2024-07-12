@@ -71,8 +71,16 @@ const getAssetInfo = async (assetId) => {
 
 // Send a transfer of a specific asset
 const sendTransfer = async (assetId, address, amount) => {
-  const asset = await getAssetDetails(assetId);
-  const decimalPoint = asset.decimal_point;
+  let decimalPoint;
+  if (
+    assetId ===
+    "d6329b5b1f7c0805b5c345f4957554002a2f557845f64d7645dae0e051a6498a"
+  ) {
+    decimalPoint = 12;
+  } else {
+    const asset = await getAssetDetails(assetId);
+    decimalPoint = asset.decimal_point;
+  }
   const headers = { "Content-Type": "application/json" };
   const bigAmount = new Big(amount)
     .times(new Big(10).pow(decimalPoint))
